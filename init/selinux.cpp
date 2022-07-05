@@ -123,6 +123,7 @@ EnforcingStatus StatusFromProperty() {
 }
 
 bool IsEnforcing() {
+    return false;
     if (ALLOW_PERMISSIVE_SELINUX) {
         return StatusFromProperty() == SELINUX_ENFORCING;
     }
