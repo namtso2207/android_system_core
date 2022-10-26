@@ -1238,6 +1238,35 @@ static void ExportKernelBootProps() {
     }
 }
 
+static void export_lcd_status() {
+    int fd;
+    char buf[2048];
+    if ((fd = open("/proc/cmdline", O_RDONLY)) < 0) {
+       LOG(FATAL) << "Failed to export lcd status!";
+       InitPropertySet("sys.lcd.id", "0");
+       return;
+    }
+    read(fd, buf, sizeof(buf) - 1);
+    if(strstr(buf,"namtso_mipi_id=1") != NULL) {//TS101
+        InitPropertySet("sys.lcd.id", "1");
+        InitPropertySet("vendor.hwc.device.primary", "DSI");
+		InitPropertySet("vendor.hwc.device.extend", "HDMI-A,DP");
+		InitPropertySet("persist.sys.rotation.einit-1", "0");
+		InitPropertySet("persist.sys.rotation.einit-2", "0");
+		InitPropertySet("persist.vendor.framebuffer.main", "1920x1200@60");
+        LOG(INFO) << "switch TS101!";
+    } else {//TS050
+        InitPropertySet("sys.lcd.id", "0");
+        InitPropertySet("vendor.hwc.device.primary", "HDMI-A,DP");
+		InitPropertySet("vendor.hwc.device.extend", "DSI");
+		InitPropertySet("persist.sys.rotation.einit-1", "3");
+		InitPropertySet("persist.sys.rotation.einit-2", "3");
+		InitPropertySet("persist.vendor.framebuffer.main", "1920x1080@60");
+
+    }
+    close(fd);
+}
+
 static void ProcessKernelDt() {
     if (!is_android_dt_value_expected("compatible", "android,firmware")) {
         return;
@@ -1307,6 +1336,7 @@ void PropertyInit() {
     ExportKernelBootProps();
 
     PropertyLoadBootDefaults();
+    export_lcd_status();
 }
 
 static void HandleInitSocket() {
