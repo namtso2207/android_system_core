@@ -1247,22 +1247,38 @@ static void export_lcd_status() {
        return;
     }
     read(fd, buf, sizeof(buf) - 1);
-    if(strstr(buf,"namtso_mipi_id=1") != NULL) {//TS101
-        InitPropertySet("sys.lcd.id", "1");
+    if(strstr(buf,"namtso_mipi_id=2") != NULL) {//TS101
+        InitPropertySet("sys.lcd.id", "2");
         InitPropertySet("vendor.hwc.device.primary", "DSI");
 		InitPropertySet("vendor.hwc.device.extend", "HDMI-A,DP");
 		InitPropertySet("persist.sys.rotation.einit-1", "0");
 		InitPropertySet("persist.sys.rotation.einit-2", "0");
 		InitPropertySet("persist.vendor.framebuffer.main", "1920x1200@60");
         LOG(INFO) << "switch TS101!";
-    } else {//TS050
-        InitPropertySet("sys.lcd.id", "0");
+    }else if(strstr(buf,"namtso_mipi_id=1") != NULL) {//TS050
+        InitPropertySet("sys.lcd.id", "1");
+        /*InitPropertySet("vendor.hwc.device.primary", "DSI");
+		InitPropertySet("vendor.hwc.device.extend", "HDMI-A,DP");
+		InitPropertySet("persist.sys.rotation.einit-0", "0");
+		InitPropertySet("persist.vendor.framebuffer.main", "1080x1920@60");*/
         InitPropertySet("vendor.hwc.device.primary", "HDMI-A,DP");
 		InitPropertySet("vendor.hwc.device.extend", "DSI");
 		InitPropertySet("persist.sys.rotation.einit-1", "3");
 		InitPropertySet("persist.sys.rotation.einit-2", "3");
 		InitPropertySet("persist.vendor.framebuffer.main", "1920x1080@60");
-
+        LOG(INFO) << "switch TS050!";
+    }else if(strstr(buf,"is_mipi_lcd_exit=0") != NULL) {//no mipi lcd
+        InitPropertySet("sys.lcd.id", "0");
+        InitPropertySet("vendor.hwc.device.primary", "HDMI-A,DP");
+		InitPropertySet("persist.vendor.framebuffer.main", "1920x1080@60");
+        LOG(INFO) << "switch hdmi!";
+    }else {//
+        InitPropertySet("sys.lcd.id", "0");
+        InitPropertySet("vendor.hwc.device.primary", "HDMI-A,DP");
+		InitPropertySet("vendor.hwc.device.extend", "DSI");
+		InitPropertySet("persist.sys.rotation.einit-1", "0");
+		InitPropertySet("persist.sys.rotation.einit-2", "0");
+		InitPropertySet("persist.vendor.framebuffer.main", "1920x1080@60");
     }
     close(fd);
 }
