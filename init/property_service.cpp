@@ -1255,7 +1255,7 @@ static void export_lcd_status() {
 		InitPropertySet("persist.sys.rotation.einit-2", "0");
 		InitPropertySet("persist.vendor.framebuffer.main", "1920x1200@60");
         LOG(INFO) << "switch TS101!";
-    }else if(strstr(buf,"namtso_mipi_id=1") != NULL) {//TS050
+    }else if(strstr(buf,"namtso_mipi_id=1") != NULL || strstr(buf,"namtso_mipi_id=3") != NULL) {//old or new TS050
         InitPropertySet("sys.lcd.id", "1");
         /*InitPropertySet("vendor.hwc.device.primary", "DSI");
 		InitPropertySet("vendor.hwc.device.extend", "HDMI-A,DP");
