@@ -1239,8 +1239,8 @@ static void ExportKernelBootProps() {
 }
 
 static void export_lcd_status() {
-    int fd;
-    char buf[2048];
+    int fd, fd2;
+    char buf[2048],buf2[64];
     if ((fd = open("/proc/cmdline", O_RDONLY)) < 0) {
        LOG(FATAL) << "Failed to export lcd status!";
        InitPropertySet("sys.lcd.id", "0");
@@ -1284,8 +1284,19 @@ static void export_lcd_status() {
 		InitPropertySet("persist.sys.rotation.einit-2", "0");
 		std::string value = GetProperty("persist.vendor.framebuffer.main", "1920x1080@60");
 		LOG(INFO) << "hlm switch value=" + value;
-		if (strstr(buf,"hdmimode=3840x2160") != NULL || strstr(buf,"hdmimode=7680x4320") != NULL)
+		if (strstr(buf,"hdmimode=3840x2160") != NULL || strstr(buf,"hdmimode=7680x4320") != NULL){
 			InitPropertySet("persist.vendor.framebuffer.main", "1920x1080@60");
+		} else {
+			if ((fd2 = open("/sys/class/mcu/dpmode", O_RDONLY)) < 0) {
+				LOG(INFO) << "Failed to export dp status!";
+			}
+			else {
+				read(fd2, buf2, sizeof(buf2) - 1);
+				if (strstr(buf2,"dpmode=3840x2160") != NULL || strstr(buf2,"dpmode=7680x4320") != NULL)
+					InitPropertySet("persist.vendor.framebuffer.main", "1920x1080@60");
+				close(fd2);
+			}
+		}
 /* 		if (value.find("3840x2160") != std::string::npos)
 			InitPropertySet("persist.vendor.framebuffer.main", "1920x1080@60");
 		if (value.find("7680x4320") != std::string::npos)
