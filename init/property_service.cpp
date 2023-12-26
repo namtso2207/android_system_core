@@ -1247,12 +1247,19 @@ static void export_lcd_status() {
        return;
     }
     read(fd, buf, sizeof(buf) - 1);
+    if(strstr(buf,"namtso_mipi_id2=2") != NULL) {//TS101
+		InitPropertySet("persist.sys.rotation.einit-2", "0");
+    }else if(strstr(buf,"namtso_mipi_id2=1") != NULL || strstr(buf,"namtso_mipi_id2=3") != NULL) {//old or new TS050
+		InitPropertySet("persist.sys.rotation.einit-2", "3");
+    }else {
+		InitPropertySet("persist.sys.rotation.einit-2", "0");
+	}
+
     if(strstr(buf,"namtso_mipi_id=2") != NULL) {//TS101
         InitPropertySet("sys.lcd.id", "2");
         InitPropertySet("vendor.hwc.device.primary", "DSI,DP");
 		InitPropertySet("vendor.hwc.device.extend", "HDMI-A");
 		InitPropertySet("persist.sys.rotation.einit-1", "0");
-		InitPropertySet("persist.sys.rotation.einit-2", "0");
 		InitPropertySet("persist.vendor.framebuffer.main", "1920x1200@60");
         LOG(INFO) << "switch TS101!";
     }else if(strstr(buf,"namtso_mipi_id=4") != NULL) {//edp
@@ -1260,7 +1267,6 @@ static void export_lcd_status() {
         InitPropertySet("vendor.hwc.device.primary", "Edp,DP");
                 InitPropertySet("vendor.hwc.device.extend", "HDMI-A");
                 InitPropertySet("persist.sys.rotation.einit-1", "0");
-                InitPropertySet("persist.sys.rotation.einit-2", "0");
                 InitPropertySet("persist.vendor.framebuffer.main", "2560x1600@60");
         LOG(INFO) << "switch Edp!";
     }else if(strstr(buf,"namtso_mipi_id=1") != NULL || strstr(buf,"namtso_mipi_id=3") != NULL) {//old or new TS050
@@ -1272,7 +1278,6 @@ static void export_lcd_status() {
         InitPropertySet("vendor.hwc.device.primary", "HDMI-A");
 		InitPropertySet("vendor.hwc.device.extend", "DSI,DP");
 		InitPropertySet("persist.sys.rotation.einit-1", "3");
-		InitPropertySet("persist.sys.rotation.einit-2", "3");
 		InitPropertySet("persist.vendor.framebuffer.main", "1920x1080@60");
         LOG(INFO) << "switch TS050!";
     }else {//
@@ -1281,7 +1286,6 @@ static void export_lcd_status() {
 		InitPropertySet("vendor.hwc.device.primary", "HDMI-A");
 		InitPropertySet("vendor.hwc.device.extend", "DP");
 		InitPropertySet("persist.sys.rotation.einit-1", "0");
-		InitPropertySet("persist.sys.rotation.einit-2", "0");
 		std::string value = GetProperty("persist.vendor.framebuffer.main", "1920x1080@60");
 		LOG(INFO) << "hlm switch value=" + value;
 		if (strstr(buf,"hdmimode=3840x2160") != NULL || strstr(buf,"hdmimode=7680x4320") != NULL){
