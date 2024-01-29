@@ -35,6 +35,7 @@
 #include <sys/un.h>
 #include <unistd.h>
 #include <wchar.h>
+#include <stdint.h>
 
 #define _REALLY_INCLUDE_SYS__SYSTEM_PROPERTIES_H_
 #include <sys/_system_properties.h>
@@ -1287,18 +1288,30 @@ static void export_lcd_status() {
 		InitPropertySet("vendor.hwc.device.extend", "DP");
 		InitPropertySet("persist.sys.rotation.einit-1", "0");
 		std::string value = GetProperty("persist.vendor.framebuffer.main", "1920x1080@60");
-		LOG(INFO) << "hlm switch value=" + value;
-		if (strstr(buf,"hdmimode=3840x2160") != NULL || strstr(buf,"hdmimode=7680x4320") != NULL){
+		LOG(ERROR) << "hlm switch value=" + value;
+
+		char* buf5 = strstr(buf, "hdmimode");
+		char hdmimode_result[24];
+		strncpy(hdmimode_result, buf5, 24);
+		LOG(ERROR) << "hlm hdmimode_result=" << hdmimode_result;
+
+		if (strstr(hdmimode_result,"x2160") != NULL || strstr(hdmimode_result,"x4320") != NULL){
 			InitPropertySet("persist.vendor.framebuffer.main", "1920x1080@60");
+			LOG(ERROR) << "hlm hdmi UI SIZE 1920x1080@60";
 		} else {
 			if ((fd2 = open("/sys/class/mcu/dpmode", O_RDONLY)) < 0) {
 				LOG(INFO) << "Failed to export dp status!";
 			}
 			else {
 				read(fd2, buf2, sizeof(buf2) - 1);
-				if (strstr(buf2,"dpmode=3840x2160") != NULL || strstr(buf2,"dpmode=7680x4320") != NULL)
+				char* buf6 = strstr(buf2, "dpmode");
+				char dpmode_result[24];
+				strncpy(dpmode_result, buf6, 24);
+				LOG(ERROR) << "hlm dpmode_result=" << dpmode_result;
+				if (strstr(dpmode_result,"x2160") != NULL || strstr(dpmode_result,"x4320") != NULL)
 					InitPropertySet("persist.vendor.framebuffer.main", "1920x1080@60");
 				close(fd2);
+				LOG(ERROR) << "hlm dp UI SIZE 1920x1080@60";
 			}
 		}
 /* 		if (value.find("3840x2160") != std::string::npos)
