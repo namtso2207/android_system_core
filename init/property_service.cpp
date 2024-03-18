@@ -35,7 +35,6 @@
 #include <sys/un.h>
 #include <unistd.h>
 #include <wchar.h>
-#include <stdint.h>
 
 #define _REALLY_INCLUDE_SYS__SYSTEM_PROPERTIES_H_
 #include <sys/_system_properties.h>
@@ -1019,6 +1018,75 @@ static void property_initialize_ro_cpu_abilist() {
     }
 }
 
+static void export_lcd_status() {
+    int fd;
+    char buf[2048];
+	LOG(INFO) << "export_lcd_status!";
+    if ((fd = open("/proc/cmdline", O_RDONLY)) < 0) {
+       LOG(FATAL) << "Failed to export lcd status!";
+       InitPropertySet("sys.lcd.id", "0");
+       return;
+    }
+    read(fd, buf, sizeof(buf) - 1);
+    if(strstr(buf,"namtso_mipi_id2=2") != NULL) {//TS101
+		InitPropertySet("persist.sys.rotation.einit-2", "0");
+    }else if(strstr(buf,"namtso_mipi_id2=1") != NULL || strstr(buf,"namtso_mipi_id2=3") != NULL) {//old or new TS050
+		InitPropertySet("persist.sys.rotation.einit-2", "3");
+    }else {
+		InitPropertySet("persist.sys.rotation.einit-2", "0");
+	}
+
+    if(strstr(buf,"namtso_mipi_id=2") != NULL) {//TS101
+        InitPropertySet("sys.lcd.id", "2");
+        InitPropertySet("vendor.hwc.device.primary", "DSI,DP");
+		InitPropertySet("vendor.hwc.device.extend", "HDMI-A");
+		InitPropertySet("persist.sys.rotation.einit-1", "0");
+		InitPropertySet("persist.vendor.framebuffer.main", "1920x1200@60");
+        LOG(INFO) << "switch TS101!";
+    }else if(strstr(buf,"namtso_mipi_id=4") != NULL) {//edp
+        InitPropertySet("sys.lcd.id", "2");
+        InitPropertySet("vendor.hwc.device.primary", "Edp,DP");
+                InitPropertySet("vendor.hwc.device.extend", "HDMI-A");
+                InitPropertySet("persist.sys.rotation.einit-1", "0");
+                InitPropertySet("persist.vendor.framebuffer.main", "2560x1600@60");
+        LOG(INFO) << "switch Edp!";
+    }else if(strstr(buf,"namtso_mipi_id=1") != NULL || strstr(buf,"namtso_mipi_id=3") != NULL) {//old or new TS050
+        InitPropertySet("sys.lcd.id", "1");
+        /*InitPropertySet("vendor.hwc.device.primary", "DSI,DP");
+		InitPropertySet("vendor.hwc.device.extend", "HDMI-A");
+		InitPropertySet("persist.sys.rotation.einit-0", "0");
+		InitPropertySet("persist.vendor.framebuffer.main", "1080x1920@60");*/
+        InitPropertySet("vendor.hwc.device.primary", "HDMI-A");
+		InitPropertySet("vendor.hwc.device.extend", "DSI,DP");
+		InitPropertySet("persist.sys.rotation.einit-1", "3");
+		InitPropertySet("persist.vendor.framebuffer.main", "1920x1080@60");
+        LOG(INFO) << "switch TS050!";
+    }else {//
+		LOG(INFO) << "switch none!";
+		InitPropertySet("sys.lcd.id", "0");
+		InitPropertySet("vendor.hwc.device.primary", "HDMI-A");
+		InitPropertySet("vendor.hwc.device.extend", "DP");
+		InitPropertySet("persist.sys.rotation.einit-1", "0");
+		//std::string value = GetProperty("persist.vendor.framebuffer.main", "1920x1080@60");
+		//LOG(ERROR) << "hlm switch value=" + value;
+
+/*		char* buf5 = strstr(buf, "hdmimode");
+		char hdmimode_result[18];
+		strncpy(hdmimode_result, buf5, 18);
+		LOG(INFO) << "hlm hdmimode_result=" << hdmimode_result;
+
+		if (strstr(hdmimode_result,"x2160") != NULL || strstr(hdmimode_result,"x4320") != NULL){
+			InitPropertySet("persist.vendor.framebuffer.main", "1920x1080@60");
+			LOG(INFO) << "hlm hdmi UI SIZE 1920x1080@60";
+		}
+		if (value.find("3840x2160") != std::string::npos)
+			InitPropertySet("persist.vendor.framebuffer.main", "1920x1080@60");
+		if (value.find("7680x4320") != std::string::npos)
+			InitPropertySet("persist.vendor.framebuffer.main", "1920x1080@60"); */
+    }
+    close(fd);
+}
+
 static int read_api_level_props(const std::vector<std::string>& api_level_props) {
     int api_level = API_LEVEL_CURRENT;
     for (const auto& api_level_prop : api_level_props) {
@@ -1132,7 +1200,7 @@ void PropertyLoadBootDefaults() {
                        << "' while loading .prop files" << error;
         }
     }
-
+	export_lcd_status();
     property_initialize_ro_product_props();
     property_initialize_build_id();
     property_derive_build_fingerprint();
@@ -1239,89 +1307,6 @@ static void ExportKernelBootProps() {
     }
 }
 
-static void export_lcd_status() {
-    int fd, fd2;
-    char buf[2048],buf2[64];
-    if ((fd = open("/proc/cmdline", O_RDONLY)) < 0) {
-       LOG(FATAL) << "Failed to export lcd status!";
-       InitPropertySet("sys.lcd.id", "0");
-       return;
-    }
-    read(fd, buf, sizeof(buf) - 1);
-    if(strstr(buf,"namtso_mipi_id2=2") != NULL) {//TS101
-		InitPropertySet("persist.sys.rotation.einit-2", "0");
-    }else if(strstr(buf,"namtso_mipi_id2=1") != NULL || strstr(buf,"namtso_mipi_id2=3") != NULL) {//old or new TS050
-		InitPropertySet("persist.sys.rotation.einit-2", "3");
-    }else {
-		InitPropertySet("persist.sys.rotation.einit-2", "0");
-	}
-
-    if(strstr(buf,"namtso_mipi_id=2") != NULL) {//TS101
-        InitPropertySet("sys.lcd.id", "2");
-        InitPropertySet("vendor.hwc.device.primary", "DSI,DP");
-		InitPropertySet("vendor.hwc.device.extend", "HDMI-A");
-		InitPropertySet("persist.sys.rotation.einit-1", "0");
-		InitPropertySet("persist.vendor.framebuffer.main", "1920x1200@60");
-        LOG(INFO) << "switch TS101!";
-    }else if(strstr(buf,"namtso_mipi_id=4") != NULL) {//edp
-        InitPropertySet("sys.lcd.id", "2");
-        InitPropertySet("vendor.hwc.device.primary", "Edp,DP");
-                InitPropertySet("vendor.hwc.device.extend", "HDMI-A");
-                InitPropertySet("persist.sys.rotation.einit-1", "0");
-                InitPropertySet("persist.vendor.framebuffer.main", "2560x1600@60");
-        LOG(INFO) << "switch Edp!";
-    }else if(strstr(buf,"namtso_mipi_id=1") != NULL || strstr(buf,"namtso_mipi_id=3") != NULL) {//old or new TS050
-        InitPropertySet("sys.lcd.id", "1");
-        /*InitPropertySet("vendor.hwc.device.primary", "DSI,DP");
-		InitPropertySet("vendor.hwc.device.extend", "HDMI-A");
-		InitPropertySet("persist.sys.rotation.einit-0", "0");
-		InitPropertySet("persist.vendor.framebuffer.main", "1080x1920@60");*/
-        InitPropertySet("vendor.hwc.device.primary", "HDMI-A");
-		InitPropertySet("vendor.hwc.device.extend", "DSI,DP");
-		InitPropertySet("persist.sys.rotation.einit-1", "3");
-		InitPropertySet("persist.vendor.framebuffer.main", "1920x1080@60");
-        LOG(INFO) << "switch TS050!";
-    }else {//
-		LOG(INFO) << "switch none!";
-		InitPropertySet("sys.lcd.id", "0");
-		InitPropertySet("vendor.hwc.device.primary", "HDMI-A");
-		InitPropertySet("vendor.hwc.device.extend", "DP");
-		InitPropertySet("persist.sys.rotation.einit-1", "0");
-		std::string value = GetProperty("persist.vendor.framebuffer.main", "1920x1080@60");
-		LOG(ERROR) << "hlm switch value=" + value;
-
-		char* buf5 = strstr(buf, "hdmimode");
-		char hdmimode_result[24];
-		strncpy(hdmimode_result, buf5, 24);
-		LOG(ERROR) << "hlm hdmimode_result=" << hdmimode_result;
-
-		if (strstr(hdmimode_result,"x2160") != NULL || strstr(hdmimode_result,"x4320") != NULL){
-			InitPropertySet("persist.vendor.framebuffer.main", "1920x1080@60");
-			LOG(ERROR) << "hlm hdmi UI SIZE 1920x1080@60";
-		} else {
-			if ((fd2 = open("/sys/class/mcu/dpmode", O_RDONLY)) < 0) {
-				LOG(INFO) << "Failed to export dp status!";
-			}
-			else {
-				read(fd2, buf2, sizeof(buf2) - 1);
-				char* buf6 = strstr(buf2, "dpmode");
-				char dpmode_result[24];
-				strncpy(dpmode_result, buf6, 24);
-				LOG(ERROR) << "hlm dpmode_result=" << dpmode_result;
-				if (strstr(dpmode_result,"x2160") != NULL || strstr(dpmode_result,"x4320") != NULL)
-					InitPropertySet("persist.vendor.framebuffer.main", "1920x1080@60");
-				close(fd2);
-				LOG(ERROR) << "hlm dp UI SIZE 1920x1080@60";
-			}
-		}
-/* 		if (value.find("3840x2160") != std::string::npos)
-			InitPropertySet("persist.vendor.framebuffer.main", "1920x1080@60");
-		if (value.find("7680x4320") != std::string::npos)
-			InitPropertySet("persist.vendor.framebuffer.main", "1920x1080@60"); */
-    }
-    close(fd);
-}
-
 static void ProcessKernelDt() {
     if (!is_android_dt_value_expected("compatible", "android,firmware")) {
         return;
@@ -1391,7 +1376,7 @@ void PropertyInit() {
     ExportKernelBootProps();
 
     PropertyLoadBootDefaults();
-    export_lcd_status();
+    //export_lcd_status();
 }
 
 static void HandleInitSocket() {
