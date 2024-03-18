@@ -1061,7 +1061,7 @@ static void export_lcd_status() {
 		InitPropertySet("persist.sys.rotation.einit-1", "3");
 		InitPropertySet("persist.vendor.framebuffer.main", "1920x1080@60");
         LOG(INFO) << "switch TS050!";
-    }else {//
+    }else if(strstr(buf,"namtso_mipi_id2=0") != NULL) {//no lcd
 		LOG(INFO) << "switch none!";
 		InitPropertySet("sys.lcd.id", "0");
 		InitPropertySet("vendor.hwc.device.primary", "HDMI-A");
@@ -1083,6 +1083,17 @@ static void export_lcd_status() {
 			InitPropertySet("persist.vendor.framebuffer.main", "1920x1080@60");
 		if (value.find("7680x4320") != std::string::npos)
 			InitPropertySet("persist.vendor.framebuffer.main", "1920x1080@60"); */
+    }else {// only lcd2
+		LOG(INFO) << "switch only lcd2!";
+        InitPropertySet("vendor.hwc.device.primary", "DSI,DP");
+		InitPropertySet("vendor.hwc.device.extend", "HDMI-A");
+		if(strstr(buf,"namtso_mipi_id2=2") != NULL) {//TS101
+			InitPropertySet("sys.lcd.id", "2");
+			InitPropertySet("persist.vendor.framebuffer.main", "1920x1200@60");
+		}else if(strstr(buf,"namtso_mipi_id2=1") != NULL || strstr(buf,"namtso_mipi_id2=3") != NULL) {//old or new TS050
+			InitPropertySet("sys.lcd.id", "1");
+			InitPropertySet("persist.vendor.framebuffer.main", "1920x1080@60");
+		}
     }
     close(fd);
 }
